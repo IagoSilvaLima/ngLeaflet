@@ -5,7 +5,7 @@
 
     $leafletOptionsDefault.$inject = ['$leafletHelper'];
 
-    function leafletOptionsDefault($leafletHelper){
+    function $leafletOptionsDefault($leafletHelper){
 
         return {
             getOptionsDefault : function(){

@@ -1,26 +1,26 @@
 angular.module("ng-leaflet",[]);
 (function(){
     'use strict';
-    angular.module("ng-leaflet").directive("ngLeafletMap",ngLeafletMap);
-    leafletMap.$inject = ["$leafletConfig","$leafletHelper","$leafletOptionsDefault",]
+    angular.module("ng-leaflet").directive("leafletMap",ngLeafletMap);
+    ngLeafletMap.$inject = ["$leafletConfig","$leafletHelper","$leafletOptionsDefault",]
 
-    function leafletMap($leafletConfig, $leafletHelper, $leafletOptionsDefault){
+    function ngLeafletMap($leafletConfig, $leafletHelper, $leafletOptionsDefault){
         return {
             restrict : "E",
             replace : true,
             scope:{
-                ngConfig : "@",
+                ngConfig : "=",
                 ngLeafletclick : "&"
             },
             template : "<div></div>",
-
             link : function(scope, element, attrs){
             var options =  $leafletOptionsDefault.setDefaults(scope.ngConfig.options);
+                console.log(scope);
                 var map = new L.Map(element[0],options);
-                $leafletConfig.setConfigurations(attrs, scope.config, element, map);
-                if($leafletHelper.isDefined(scope.ngLeafletClick)){
+                $leafletConfig.setConfigurations(attrs, scope.ngConfig, element, map);
+                if($leafletHelper.isDefined(scope.ngLeafletclick)){
                     map.on('click',function(e){
-                        scope.ngLeafletClick({ event:e,map :map});
+                        scope.ngLeafletclick({ event:e,map :map});
                     })        
                 }
       
@@ -30,7 +30,7 @@ angular.module("ng-leaflet",[]);
             }
         };
     }    
-});
+})();
 (function(){
     'use strict';
 
@@ -38,7 +38,7 @@ angular.module("ng-leaflet",[]);
 
     $leafletOptionsDefault.$inject = ['$leafletHelper'];
 
-    function leafletOptionsDefault($leafletHelper){
+    function $leafletOptionsDefault($leafletHelper){
 
         return {
             getOptionsDefault : function(){
