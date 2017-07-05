@@ -16,7 +16,7 @@
             self.markers.push(marker);
         }
 
-        function _removeMarker(){
+        function _removeMarker(marker){
             
         }
     }

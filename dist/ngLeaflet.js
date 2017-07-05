@@ -1,126 +1,6 @@
 angular.module("ng-leaflet",[]);
 (function(){
     'use strict';
-    angular.module("ng-leaflet").directive("ngLeafletMap",ngLeafletMap);
-
-    ngLeafletMap.$inject = ["$leafletConfig","$leafletHelper","$leafletOptionsDefault",];
-
-    function ngLeafletMap($leafletConfig, $leafletHelper, $leafletOptionsDefault){
-        return {
-            restrict : "E",
-            replace : true,
-            transclude : true,
-            scope:{
-                ngConfig : "=",
-                ngLeafletclick : "&"
-            },
-            controller : _controller,
-            link : _link,
-            template : "<div><ng-transclude></ng-transclude></div>"
-        };
-
-        _controller.$inject = ['$attrs','$element','$scope'];
-
-        function _controller($attrs, $element, $scope){
-            var self = this;
-            self.options = $leafletOptionsDefault.setDefaults($scope.ngConfig.options);
-            self.map = new L.Map($element[0],self.options);
-
-            self.addMarker = function(marker){
-                marker.addTo(self.map);
-            }
-
-            self.addPolyline = function(path){
-                L.Polyline.fromEncoded(path).addTo(self.map);
-            }
-        }
-
-        function _link(scope, element, attrs, mapController){
-            $leafletConfig.setConfigurations(attrs, scope.ngConfig, element, mapController.map);
-            var tileLayer = L.tileLayer(mapController.options.tileLayer,mapController.options.tileLayerOptions)
-            mapController.map.addLayer(tileLayer);
-        }
-    }    
-})();
-(function(){
-    'use strict';
-
-    angular.module('ng-leaflet').directive('ngLeafletMarker',ngLeafletMarker);
-
-    ngLeafletMarker.$inject = ['$leafletHelper','$leafletMarker', '$leafletMarkerData'];
-
-    function ngLeafletMarker($leafletHelper, $leafletMarker, $leafletMarkerData){
-        return {
-            require : '^^ngLeafletMap',
-            restrict : 'E',
-            scope :{
-                ngConfigMarker : "=",
-                markers : "="
-            },
-            link :_link
-        }
-
-        function _link(scope, element, attrs, mapController){
-            
-            if($leafletHelper.isDefined(scope.ngConfigMarker)){
-                scope.ngConfigMarker.clickable = $leafletHelper.isDefined(scope.ngConfigMarker.clickable) ? scope.ngConfigMarker.clickable : false;
-                scope.ngConfigMarker.draggable = $leafletHelper.isDefined(scope.ngConfigMarker.draggable) ? scope.ngConfigMarker.draggable : false;
-                scope.ngConfigMarker.limit = $leafletHelper.isDefined(scope.ngConfigMarker.limit) ? scope.ngConfigMarker.limit: 23;
-                scope.markers = $leafletHelper.isDefined(scope.markers) ? scope.markers: [];
-            }
-            
-            var map = mapController.map;
-            
-            scope.markers.forEach(function(marker) {
-                mapController.addMarker(marker);   
-            });
-
-            if (scope.ngConfigMarker.clickable){
-                map.on('click',function(e){
-                    if (scope.markers.length  >= scope.ngConfigMarker.limit){
-                        alert('Limite de marcadores atingidos')
-                    }
-                    else{
-                        var marker = $leafletMarker.createMarker(e.latlng.lat, e.latlng.lng, scope.ngConfigMarker.draggable);
-                        scope.markers.push(marker);
-                        $leafletMarkerData.registerMarker(marker);
-                        mapController.addMarker(marker);
-                        marker.on('contextmenu',function(e){
-                            marker.remove();
-                        });
-                    }
-                    
-                });
-            }
-        }
-    }
-})();
-(function(){
-    'use strict';
-
-    angular.module('ng-leaflet').directive('ngLeafletPolyline',ngLeafletPolyline);
-
-    ngLeafletPolyline.$inject = ['$leafletHelper'];
-
-    function ngLeafletPolyline($leafletHelper){
-        return {
-            require : '^^ngLeafletMap',
-            restrict : 'E',
-            scope : {
-                ngPath : '='
-            },
-            link : _link
-        }
-
-        function _link(scope, element, attrs, mapController){
-            if($leafletHelper.isDefined(scope.ngPath)){
-                mapController.addPolyline(scope.ngPath);
-            };
-        }
-    }
-})();
-(function(){
-    'use strict';
 
     angular.module('ng-leaflet').factory('$leafletMarker',$leafletMarker);
 
@@ -172,6 +52,158 @@ angular.module("ng-leaflet",[]);
         }
     }    
         
+})();
+(function(){
+    'use strict';
+    angular.module("ng-leaflet").directive("ngLeafletMap",ngLeafletMap);
+
+    ngLeafletMap.$inject = ["$leafletConfig","$leafletHelper","$leafletOptionsDefault",];
+
+    function ngLeafletMap($leafletConfig, $leafletHelper, $leafletOptionsDefault){
+        return {
+            restrict : "E",
+            replace : true,
+            transclude : true,
+            scope:{
+                ngConfig : "="
+            },
+            controller :  ['$attrs','$element','$scope',_controller],
+            link : _link,
+            template : "<div><ng-transclude></ng-transclude></div>"
+        };
+
+        //_controller.$inject = ['$attrs','$element','$scope'];
+
+        function _controller($attrs, $element, $scope){
+            var self = this;
+            self.options = $leafletOptionsDefault.setDefaults($scope.ngConfig.options);
+            self.map = new L.Map($element[0],self.options);
+            var stops = L.layerGroup().addTo(self.map);
+            var pathPolyline = L.layerGroup().addTo(self.map);
+
+            self.addMarker = function(marker){
+                stops.addLayer(marker);
+            }
+
+            self.addPolyline = function(path){
+                var polyline = L.Polyline.fromEncoded(path);
+                pathPolyline.addLayer(polyline);
+            }
+
+            self.removeMarker = function(marker){
+                stops.removeLayer(marker);
+            }
+
+            self.clearMarkers = function(){
+                stops.clearLayers();
+            }
+
+            self.removePolyline = function(){
+                pathPolyline.clearLayers();
+            }
+        }
+
+        function _link(scope, element, attrs, mapController){
+            $leafletConfig.setConfigurations(attrs, scope.ngConfig, element, mapController.map);
+            var tileLayer = L.tileLayer(mapController.options.tileLayer,mapController.options.tileLayerOptions)
+            mapController.map.addLayer(tileLayer);
+        }
+    }    
+})();
+(function(){
+    'use strict';
+
+    angular.module('ng-leaflet').directive('ngLeafletMarker',ngLeafletMarker);
+
+    ngLeafletMarker.$inject = ['$leafletHelper','$leafletMarker', '$leafletMarkerData'];
+
+    function ngLeafletMarker($leafletHelper, $leafletMarker, $leafletMarkerData){
+        return {
+            require : '^^ngLeafletMap',
+            restrict : 'E',
+            scope :{
+                ngConfigMarker : "=",
+                markers : "="
+            },
+            link :_link
+        }
+
+        function _link(scope, element, attrs, mapController){
+            
+            if($leafletHelper.isDefined(scope.ngConfigMarker)){
+                scope.ngConfigMarker.readOnly = $leafletHelper.isDefined(scope.ngConfigMarker.readOnly) ? scope.ngConfigMarker.readOnly : false;
+                scope.ngConfigMarker.limit = $leafletHelper.isDefined(scope.ngConfigMarker.limit) ? scope.ngConfigMarker.limit: 23;
+                scope.markers = $leafletHelper.isDefined(scope.markers) ? scope.markers: [];
+            }
+            
+            var map = mapController.map;
+            
+            scope.markers.forEach(function(marker) {
+                mapController.addMarker(marker);   
+            });
+
+            scope.$watch('markers',function(newValue,oldValue){
+                if(oldValue != newValue){
+                    mapController.clearMarkers();
+                    newValue.forEach(function(marker){
+                        mapController.addMarker(marker);
+                    });
+                }      
+            });
+
+            if (!scope.ngConfigMarker.readOnly){
+                map.on('click',function(e){
+                    if (scope.markers.length  >= scope.ngConfigMarker.limit){
+                        alert('Limite de marcadores atingidos')
+                    }
+                    else{
+                        var marker = $leafletMarker.createMarker(e.latlng.lat, e.latlng.lng, true);
+                        scope.markers.push(marker);
+                        $leafletMarkerData.registerMarker(marker);
+                        mapController.addMarker(marker);
+                        marker.on('contextmenu',function(e){
+                            mapController.removeMarker(marker);
+                        });
+
+                        marker.on('remove' ,function(e){
+                            $leafletMarkerData.removeMarker(marker);
+                        })
+                    } 
+                });
+            }
+        }
+    }
+})();
+(function(){
+    'use strict';
+
+    angular.module('ng-leaflet').directive('ngLeafletPolyline',ngLeafletPolyline);
+
+    ngLeafletPolyline.$inject = ['$leafletHelper'];
+
+    function ngLeafletPolyline($leafletHelper){
+        return {
+            require : '^^ngLeafletMap',
+            restrict : 'E',
+            scope : {
+                ngPath : '='
+            },
+            link : _link
+        }
+
+        function _link(scope, element, attrs, mapController){
+            if($leafletHelper.isDefined(scope.ngPath)){
+                mapController.addPolyline(scope.ngPath);
+            };
+
+            scope.$watch('ngPath',function(newValue, oldValue){
+                if(newValue != oldValue){
+                    mapController.removePolyline();    
+                    mapController.addPolyline(newValue);
+                }       
+            });
+        }
+    }
 })();
 (function(){
     'use strict';
@@ -255,7 +287,7 @@ angular.module("ng-leaflet",[]);
             self.markers.push(marker);
         }
 
-        function _removeMarker(){
+        function _removeMarker(marker){
             
         }
     }

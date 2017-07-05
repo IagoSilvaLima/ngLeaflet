@@ -10,27 +10,40 @@
             replace : true,
             transclude : true,
             scope:{
-                ngConfig : "=",
-                ngLeafletclick : "&"
+                ngConfig : "="
             },
-            controller : _controller,
+            controller :  ['$attrs','$element','$scope',_controller],
             link : _link,
             template : "<div><ng-transclude></ng-transclude></div>"
         };
 
-        _controller.$inject = ['$attrs','$element','$scope'];
 
         function _controller($attrs, $element, $scope){
             var self = this;
             self.options = $leafletOptionsDefault.setDefaults($scope.ngConfig.options);
             self.map = new L.Map($element[0],self.options);
+            var stops = L.layerGroup().addTo(self.map);
+            var pathPolyline = L.layerGroup().addTo(self.map);
 
             self.addMarker = function(marker){
-                marker.addTo(self.map);
+                stops.addLayer(marker);
             }
 
             self.addPolyline = function(path){
-                L.Polyline.fromEncoded(path).addTo(self.map);
+                var polyline = L.Polyline.fromEncoded(path);
+                pathPolyline.addLayer(polyline);
+            }
+
+            self.removeMarker = function(marker){
+                stops.removeLayer(marker);
+            }
+
+            self.clearMarkers = function(){
+                stops.clearLayers();
+            }
+
+            self.removePolyline = function(){
+                pathPolyline.clearLayers();
             }
         }
 

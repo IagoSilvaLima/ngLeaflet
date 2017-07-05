@@ -19,8 +19,7 @@
         function _link(scope, element, attrs, mapController){
             
             if($leafletHelper.isDefined(scope.ngConfigMarker)){
-                scope.ngConfigMarker.clickable = $leafletHelper.isDefined(scope.ngConfigMarker.clickable) ? scope.ngConfigMarker.clickable : false;
-                scope.ngConfigMarker.draggable = $leafletHelper.isDefined(scope.ngConfigMarker.draggable) ? scope.ngConfigMarker.draggable : false;
+                scope.ngConfigMarker.readOnly = $leafletHelper.isDefined(scope.ngConfigMarker.readOnly) ? scope.ngConfigMarker.readOnly : false;
                 scope.ngConfigMarker.limit = $leafletHelper.isDefined(scope.ngConfigMarker.limit) ? scope.ngConfigMarker.limit: 23;
                 scope.markers = $leafletHelper.isDefined(scope.markers) ? scope.markers: [];
             }
@@ -31,21 +30,33 @@
                 mapController.addMarker(marker);   
             });
 
-            if (scope.ngConfigMarker.clickable){
+            scope.$watch('markers',function(newValue,oldValue){
+                if(oldValue != newValue){
+                    mapController.clearMarkers();
+                    newValue.forEach(function(marker){
+                        mapController.addMarker(marker);
+                    });
+                }      
+            });
+
+            if (!scope.ngConfigMarker.readOnly){
                 map.on('click',function(e){
                     if (scope.markers.length  >= scope.ngConfigMarker.limit){
                         alert('Limite de marcadores atingidos')
                     }
                     else{
-                        var marker = $leafletMarker.createMarker(e.latlng.lat, e.latlng.lng, scope.ngConfigMarker.draggable);
+                        var marker = $leafletMarker.createMarker(e.latlng.lat, e.latlng.lng, true);
                         scope.markers.push(marker);
                         $leafletMarkerData.registerMarker(marker);
                         mapController.addMarker(marker);
                         marker.on('contextmenu',function(e){
-                            marker.remove();
+                            mapController.removeMarker(marker);
                         });
-                    }
-                    
+
+                        marker.on('remove' ,function(e){
+                            $leafletMarkerData.removeMarker(marker);
+                        })
+                    } 
                 });
             }
         }

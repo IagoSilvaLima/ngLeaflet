@@ -19,6 +19,13 @@
             if($leafletHelper.isDefined(scope.ngPath)){
                 mapController.addPolyline(scope.ngPath);
             };
+
+            scope.$watch('ngPath',function(newValue, oldValue){
+                if(newValue != oldValue){
+                    mapController.removePolyline();    
+                    mapController.addPolyline(newValue);
+                }       
+            });
         }
     }
 })();
