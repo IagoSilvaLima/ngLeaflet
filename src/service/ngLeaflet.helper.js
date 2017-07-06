@@ -1,5 +1,6 @@
 (function(){
     'use strict';
+
     angular.module('ng-leaflet').service('$leafletHelper',$leafletHelper);
 
     function $leafletHelper(){
@@ -8,4 +9,5 @@
             return angular.isDefined(value) && value !== null;
         }
     }
+    
 })();

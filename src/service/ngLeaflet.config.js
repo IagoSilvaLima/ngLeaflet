@@ -1,5 +1,6 @@
 (function(){
     'use strict';
+
     angular.module('ng-leaflet').service('$leafletConfig',$leafletConfig);
 
     $leafletConfig.$inject = ['$leafletHelper'];
@@ -7,7 +8,6 @@
     function $leafletConfig($leafletHelper){
         var self = this;
         self.setConfigurations = _setConfigurations;
-
 
         function _definePosition(config, map){
             if ($leafletHelper.isDefined(config.center)){

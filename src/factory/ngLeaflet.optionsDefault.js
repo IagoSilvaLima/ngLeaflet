@@ -22,7 +22,6 @@
                 
                 return newOptions;
             }
-
         }
 
         function _getDefaults(){

@@ -1,60 +1,6 @@
 angular.module("ng-leaflet",[]);
 (function(){
     'use strict';
-
-    angular.module('ng-leaflet').factory('$leafletMarker',$leafletMarker);
-
-    function $leafletMarker(){
-        return{
-            createMarker : function(latitude, longitude, draggable){
-                return L.marker([latitude, longitude], {draggable : draggable});
-            }
-        }
-    }
-})();
-(function(){
-    'use strict';
-
-    angular.module('ng-leaflet').factory("$leafletOptionsDefault",$leafletOptionsDefault);
-
-    $leafletOptionsDefault.$inject = ['$leafletHelper'];
-
-    function $leafletOptionsDefault($leafletHelper){
-
-        return {
-            getOptionsDefault : function(){
-                return _getDefaults();        
-            },
-            setDefaults : function(customOptions){
-                var newOptions = _getDefaults();
-                if ($leafletHelper.isDefined(customOptions)){
-                    newOptions.keyboard = $leafletHelper.isDefined(customOptions.keyboard) ? customOptions.keyboard : newOptions.keyboard;
-                    newOptions.dragging = $leafletHelper.isDefined(customOptions.dragging) ? customOptions.dragging : newOptions.dragging;
-                    newOptions.zoomControl = $leafletHelper.isDefined(customOptions.zoomControl) ? customOptions.zoomControl : newOptions.zoomControl;
-                    newOptions.tileLayer = $leafletHelper.isDefined(customOptions.tileLayer) ? customOptions.tileLayer : newOptions.tileLayer;
-                }
-                
-                return newOptions;
-            }
-
-        }
-
-        function _getDefaults(){
-            return {
-                    keyboard : true,
-                    dragging : true,
-                    zoomControl : true,
-                    tileLayer : 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    tileLayerOptions : {
-                        attribution : 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
-                    }
-            }
-        }
-    }    
-        
-})();
-(function(){
-    'use strict';
     angular.module("ng-leaflet").directive("ngLeafletMap",ngLeafletMap);
 
     ngLeafletMap.$inject = ["$leafletConfig","$leafletHelper","$leafletOptionsDefault",];
@@ -72,12 +18,11 @@ angular.module("ng-leaflet",[]);
             template : "<div><ng-transclude></ng-transclude></div>"
         };
 
-        //_controller.$inject = ['$attrs','$element','$scope'];
 
         function _controller($attrs, $element, $scope){
             var self = this;
             self.options = $leafletOptionsDefault.setDefaults($scope.ngConfig.options);
-            self.map = new L.Map($element[0],self.options);
+            self.map =  L.map($element[0],self.options);
             var stops = L.layerGroup().addTo(self.map);
             var pathPolyline = L.layerGroup().addTo(self.map);
 
@@ -115,61 +60,68 @@ angular.module("ng-leaflet",[]);
 
     angular.module('ng-leaflet').directive('ngLeafletMarker',ngLeafletMarker);
 
-    ngLeafletMarker.$inject = ['$leafletHelper','$leafletMarker', '$leafletMarkerData'];
+    ngLeafletMarker.$inject = ['$leafletHelper','$leafletMarkerConvert', '$leafletMarkerData'];
 
-    function ngLeafletMarker($leafletHelper, $leafletMarker, $leafletMarkerData){
+    function ngLeafletMarker($leafletHelper, $leafletMarkerConvert, $leafletMarkerData){
         return {
             require : '^^ngLeafletMap',
             restrict : 'E',
             scope :{
                 ngConfigMarker : "=",
-                markers : "="
+                ngMarkers : "="
             },
             link :_link
         }
 
-        function _link(scope, element, attrs, mapController){
-            
+        function _link(scope, element, attrs, mapController){   
             if($leafletHelper.isDefined(scope.ngConfigMarker)){
                 scope.ngConfigMarker.readOnly = $leafletHelper.isDefined(scope.ngConfigMarker.readOnly) ? scope.ngConfigMarker.readOnly : false;
                 scope.ngConfigMarker.limit = $leafletHelper.isDefined(scope.ngConfigMarker.limit) ? scope.ngConfigMarker.limit: 23;
-                scope.markers = $leafletHelper.isDefined(scope.markers) ? scope.markers: [];
             }
+
+            scope.ngMarkers = $leafletHelper.isDefined(scope.ngMarkers) ? scope.ngMarkers: [];
             
             var map = mapController.map;
             
-            scope.markers.forEach(function(marker) {
-                mapController.addMarker(marker);   
-            });
+            
 
-            scope.$watch('markers',function(newValue,oldValue){
+            scope.$watch('ngMarkers',function(newValue,oldValue){
                 if(oldValue != newValue){
                     mapController.clearMarkers();
                     newValue.forEach(function(marker){
                         mapController.addMarker(marker);
+                        if (!scope.ngConfigMarker.readOnly){
+                            _markersEdit(marker);
+                        }
                     });
                 }      
             });
 
             if (!scope.ngConfigMarker.readOnly){
                 map.on('click',function(e){
-                    if (scope.markers.length  >= scope.ngConfigMarker.limit){
+                    if (scope.ngMarkers.length  >= scope.ngConfigMarker.limit){
                         alert('Limite de marcadores atingidos')
                     }
                     else{
-                        var marker = $leafletMarker.createMarker(e.latlng.lat, e.latlng.lng, true);
-                        scope.markers.push(marker);
-                        $leafletMarkerData.registerMarker(marker);
+                        var marker = $leafletMarkerConvert.createMarker(e.latlng.lat, e.latlng.lng, true);
                         mapController.addMarker(marker);
-                        marker.on('contextmenu',function(e){
-                            mapController.removeMarker(marker);
-                        });
-
-                        marker.on('remove' ,function(e){
-                            $leafletMarkerData.removeMarker(marker);
-                        })
+                        _markersEdit(marker);
                     } 
                 });
+            }
+
+
+            function _markersEdit(marker){
+                scope.ngMarkers.push(marker);
+                $leafletMarkerData.registerMarker(marker);
+
+                marker.on('contextmenu',function(e){
+                    mapController.removeMarker(marker);
+                });
+
+                marker.on('remove' ,function(e){
+                    $leafletMarkerData.removeMarker(marker);
+                })
             }
         }
     }
@@ -207,6 +159,60 @@ angular.module("ng-leaflet",[]);
 })();
 (function(){
     'use strict';
+
+    angular.module('ng-leaflet').factory('$leafletMarker',$leafletMarker);
+
+    function $leafletMarker(){
+        return{
+            createMarker : function(latitude, longitude, draggable){
+                return L.marker([latitude, longitude], {draggable : draggable});
+            }
+        }
+    }
+})();
+(function(){
+    'use strict';
+
+    angular.module('ng-leaflet').factory("$leafletOptionsDefault",$leafletOptionsDefault);
+
+    $leafletOptionsDefault.$inject = ['$leafletHelper'];
+
+    function $leafletOptionsDefault($leafletHelper){
+
+        return {
+            getOptionsDefault : function(){
+                return _getDefaults();        
+            },
+            setDefaults : function(customOptions){
+                var newOptions = _getDefaults();
+                if ($leafletHelper.isDefined(customOptions)){
+                    newOptions.keyboard = $leafletHelper.isDefined(customOptions.keyboard) ? customOptions.keyboard : newOptions.keyboard;
+                    newOptions.dragging = $leafletHelper.isDefined(customOptions.dragging) ? customOptions.dragging : newOptions.dragging;
+                    newOptions.zoomControl = $leafletHelper.isDefined(customOptions.zoomControl) ? customOptions.zoomControl : newOptions.zoomControl;
+                    newOptions.tileLayer = $leafletHelper.isDefined(customOptions.tileLayer) ? customOptions.tileLayer : newOptions.tileLayer;
+                }
+                
+                return newOptions;
+            }
+        }
+
+        function _getDefaults(){
+            return {
+                    keyboard : true,
+                    dragging : true,
+                    zoomControl : true,
+                    tileLayer : 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    tileLayerOptions : {
+                        attribution : 'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+                    }
+            }
+        }
+    }    
+        
+})();
+(function(){
+    'use strict';
+
     angular.module('ng-leaflet').service('$leafletConfig',$leafletConfig);
 
     $leafletConfig.$inject = ['$leafletHelper'];
@@ -214,7 +220,6 @@ angular.module("ng-leaflet",[]);
     function $leafletConfig($leafletHelper){
         var self = this;
         self.setConfigurations = _setConfigurations;
-
 
         function _definePosition(config, map){
             if ($leafletHelper.isDefined(config.center)){
@@ -260,6 +265,7 @@ angular.module("ng-leaflet",[]);
 })();
 (function(){
     'use strict';
+
     angular.module('ng-leaflet').service('$leafletHelper',$leafletHelper);
 
     function $leafletHelper(){
@@ -268,27 +274,60 @@ angular.module("ng-leaflet",[]);
             return angular.isDefined(value) && value !== null;
         }
     }
+    
+})();
+(function(){
+    'use strict';
+
+    angular.module('ng-leaflet').service('$leafletMarkerConvert', $leafletMarkerConvert);
+
+    $leafletMarkerConvert.$inject =  ['$leafletMarker'];
+
+    function $leafletMarkerConvert($leafletMarker){
+        var self = this;
+
+        self.createMarker = _createmarker;
+        self.objectFromMarker = _objectFromMarker;
+
+        function _createmarker(latitude, longitude, draggable){
+            return $leafletMarker.createMarker(latitude, longitude, draggable);
+        }
+
+        function _objectFromMarker(marker){
+            return {latitude : marker._latlng.lat, longitude : marker._latlng.lng};
+        }
+    }
 })();
 (function(){
     'use strict';
 
     angular.module('ng-leaflet').service('$leafletMarkerData',$leafletMarkerData);
 
-    $leafletMarkerData.$inject = ['$leafletHelper'];
+    $leafletMarkerData.$inject = [];
 
-    function $leafletMarkerData($leafletHelper){
+    function $leafletMarkerData(){
         var self = this;
-        self.markers = [];
+        var markers = [];
 
+        self.getMarkers = _getMarkers;
+        self.clearMarkers = _clearMarkers;
         self.registerMarker = _registerMarker;
         self.removeMarker = _removeMarker;
 
         function _registerMarker(marker){
-            self.markers.push(marker);
+            markers.push(marker);
         }
 
         function _removeMarker(marker){
             
+        }
+
+        function _clearMarkers(){
+            markers = [];
+        }
+
+        function _getMarkers(){
+            return markers;
         }
     }
 })();

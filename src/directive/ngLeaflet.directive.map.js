@@ -21,7 +21,7 @@
         function _controller($attrs, $element, $scope){
             var self = this;
             self.options = $leafletOptionsDefault.setDefaults($scope.ngConfig.options);
-            self.map = new L.Map($element[0],self.options);
+            self.map =  L.map($element[0],self.options);
             var stops = L.layerGroup().addTo(self.map);
             var pathPolyline = L.layerGroup().addTo(self.map);
 
