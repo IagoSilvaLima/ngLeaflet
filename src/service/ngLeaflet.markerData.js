@@ -3,9 +3,9 @@
 
     angular.module('ng-leaflet').service('$leafletMarkerData',$leafletMarkerData);
 
-    $leafletMarkerData.$inject = [];
+    $leafletMarkerData.$inject = ['$leafletHelper'];
 
-    function $leafletMarkerData(){
+    function $leafletMarkerData($leafletHelper){
         var self = this;
         var markers = [];
 
@@ -19,7 +19,7 @@
         }
 
         function _removeMarker(marker){
-            
+            $leafletHelper.remove(markers, marker);
         }
 
         function _clearMarkers(){

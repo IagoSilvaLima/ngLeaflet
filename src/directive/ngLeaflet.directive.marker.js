@@ -63,6 +63,7 @@
                 });
 
                 marker.on('remove' ,function(e){
+                    $leafletHelper.remove(scope.ngMarkers, marker);
                     $leafletMarkerData.removeMarker(marker);
                 })
             }

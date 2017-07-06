@@ -120,6 +120,7 @@ angular.module("ng-leaflet",[]);
                 });
 
                 marker.on('remove' ,function(e){
+                    $leafletHelper.remove(scope.ngMarkers, marker);
                     $leafletMarkerData.removeMarker(marker);
                 })
             }
@@ -273,6 +274,12 @@ angular.module("ng-leaflet",[]);
         self.isDefined = function(value){
             return angular.isDefined(value) && value !== null;
         }
+
+        self.remove = function(array,element){
+            var position = array.indexOf(element);
+            if (position > -1)
+                array.splice(position,1);
+        }
     }
     
 })();
@@ -303,9 +310,9 @@ angular.module("ng-leaflet",[]);
 
     angular.module('ng-leaflet').service('$leafletMarkerData',$leafletMarkerData);
 
-    $leafletMarkerData.$inject = [];
+    $leafletMarkerData.$inject = ['$leafletHelper'];
 
-    function $leafletMarkerData(){
+    function $leafletMarkerData($leafletHelper){
         var self = this;
         var markers = [];
 
@@ -319,7 +326,7 @@ angular.module("ng-leaflet",[]);
         }
 
         function _removeMarker(marker){
-            
+            $leafletHelper.remove(markers, marker);
         }
 
         function _clearMarkers(){
